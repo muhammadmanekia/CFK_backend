@@ -20,7 +20,6 @@ const eventSchema = new mongoose.Schema(
     },
     endTime: {
       type: String,
-      required: true,
     },
     location: {
       type: String,
@@ -33,6 +32,19 @@ const eventSchema = new mongoose.Schema(
       type: String,
     },
     organizers: {
+      type: String,
+    },
+    registrationLink: {
+      type: String,
+    },
+    contact: {
+      type: String,
+    },
+    requireRSVP: {
+      type: Boolean,
+      default: false,
+    },
+    audience: {
       type: String,
     },
   },

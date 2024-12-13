@@ -13,7 +13,10 @@ router.post("/", eventController.createEvent);
 // Get Islamic dates
 router.get("/islamic-dates", eventController.getIslamicDates);
 
-// Additional routes for updating and deleting events
+// Update event
+router.put("/:id", eventController.updateEvent);
+
+router.delete("/:id", eventController.deleteEvent);
 // ...
 
 module.exports = router;

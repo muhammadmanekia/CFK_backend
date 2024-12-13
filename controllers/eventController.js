@@ -56,5 +56,38 @@ exports.getIslamicDates = async (req, res) => {
   }
 };
 
+// Update event
+exports.updateEvent = async (req, res) => {
+  const { id } = req.params; // Get the event ID from the request parameters
+  const updates = req.body; // Get the updated data from the request body
+
+  try {
+    const updatedEvent = await Event.findByIdAndUpdate(id, updates, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updatedEvent) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    res.json(updatedEvent); // Send the updated event as the response
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // Additional methods for updating and deleting events
 // ...
+// Delete event
+exports.deleteEvent = async (req, res) => {
+  const { id } = req.params; // Get the event ID from the request parameters
+
+  try {
+    const deletedEvent = await Event.findByIdAndDelete(id);
+    if (!deletedEvent) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    res.json({ message: "Event deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
