@@ -10,6 +10,7 @@ const donationRoutes = require("./routes/donations");
 const pledgeRoutes = require("./routes/pledges");
 const authRoute = require("./routes/auth");
 const rsvpRoutes = require("./routes/rsvps");
+const dateAdjustRoutes = require("./controllers/dateAdjustment");
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/events", eventRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/pledges", pledgeRoutes);
 app.use("/api/rsvps", rsvpRoutes);
+app.use("/api/date-adjust", dateAdjustRoutes);
 
 // Database connection
 mongoose

@@ -36,4 +36,4 @@ const pledgeSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Pledge", pledgeSchema);
+module.exports = mongoose.model("Pledge", pledgeSchema, "pledges");

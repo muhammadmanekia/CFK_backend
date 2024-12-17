@@ -33,4 +33,4 @@ const rsvpSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Rsvp", rsvpSchema);
+module.exports = mongoose.model("Rsvp", rsvpSchema, "rsvps");
