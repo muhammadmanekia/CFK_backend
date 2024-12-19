@@ -16,7 +16,6 @@ const islamicDateSchema = new mongoose.Schema(
     month: {
       type: String,
       required: true,
-      unique: true, // Ensure each month is unique
     },
     events: [eventSchema], // Array of events for each month
   },

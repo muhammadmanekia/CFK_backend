@@ -53,6 +53,7 @@ exports.getIslamicDates = async (req, res) => {
     console.log(islamicDates);
     res.json(islamicDates);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
