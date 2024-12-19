@@ -7,6 +7,9 @@ router.get("/", eventController.getAllEvents);
 
 router.get("/upcoming", eventController.getUpcomingEvents);
 
+// Get a single event by ID
+router.get("/:id", eventController.getEventById);
+
 // Create new event
 router.post("/", eventController.createEvent);
 

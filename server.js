@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const admin = require("firebase-admin");
 require("dotenv").config();
 
 const eventRoutes = require("./routes/events");
@@ -11,6 +12,13 @@ const pledgeRoutes = require("./routes/pledges");
 const authRoute = require("./routes/auth");
 const rsvpRoutes = require("./routes/rsvps");
 const dateAdjustRoutes = require("./controllers/dateAdjustment");
+const notificationRoutes = require("./routes/notifications");
+
+var serviceAccount = require("./serviceAccountKey.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 const app = express();
 
@@ -21,6 +29,7 @@ app.use(helmet());
 app.use(morgan("dev"));
 
 // Routes
+app.use("/api/firebase", notificationRoutes);
 app.use("/api/auth", authRoute);
 app.use("/api/events", eventRoutes);
 app.use("/api/donations", donationRoutes);

@@ -14,9 +14,10 @@ exports.getAllEvents = async (req, res) => {
 // Get events from today onwards
 exports.getUpcomingEvents = async (req, res) => {
   try {
-    const today = new Date(); // Get the current date and time
-    today.setDate(today.getDate() - 2); // Set the date to yesterday
-    today.setHours(21, 0, 0, 0); // Set the time to 9pm
+    const datetoday = new Date(); // Get the current date and time
+    const today = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Chicago", // Central Time Zone
+    }).format(datetoday);
     console.log(today);
 
     // Query MongoDB for events where the date is greater than or equal to today
@@ -91,3 +92,22 @@ exports.deleteEvent = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// ... existing code ...
+
+// Get a single event by ID
+exports.getEventById = async (req, res) => {
+  const { id } = req.params; // Get the event ID from the request parameters
+
+  try {
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    res.json(event); // Send the event as the response
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ... existing code ...
