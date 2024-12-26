@@ -13,6 +13,7 @@ const authRoute = require("./routes/auth");
 const rsvpRoutes = require("./routes/rsvps");
 const dateAdjustRoutes = require("./controllers/dateAdjustment");
 const notificationRoutes = require("./routes/notifications");
+const messagesRoutes = require("./routes/messages");
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
@@ -29,6 +30,7 @@ app.use(helmet());
 app.use(morgan("dev"));
 
 // Routes
+app.use("/api/messages", messagesRoutes);
 app.use("/api/firebase", notificationRoutes);
 app.use("/api/auth", authRoute);
 app.use("/api/events", eventRoutes);
