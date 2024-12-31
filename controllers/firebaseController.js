@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const Notification = require("../models/Notifications");
 
 exports.sendNotification = async (req, res) => {
-  const { topic, title, body } = req.body;
+  const { topic, title, body, screen, eventId } = req.body;
 
   const message = {
     notification: {
@@ -11,6 +11,12 @@ exports.sendNotification = async (req, res) => {
       body,
     },
     topic,
+    data: {
+      // Add the data payload
+      eventId: eventId.toString(),
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
+      targetScreen: screen || null, // Include the screen or null if not provided
+    },
   };
 
   try {
@@ -19,12 +25,14 @@ exports.sendNotification = async (req, res) => {
       topic,
       title,
       body,
+      screen,
+      eventId,
     });
     await newNotification.save();
-    res.status(200).send({ success: true, response });
+    res.status(200).json({ success: true, messageId: response }); // Send only the message ID
   } catch (error) {
-    console.log(error);
-    res.status(500).send({ success: false, error: error.message });
+    console.error("Error sending notification:", error); // Log the full error for debugging
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 

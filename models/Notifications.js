@@ -11,6 +11,14 @@ const notificationSchema = new mongoose.Schema(
     topic: {
       type: String,
     },
+    screen: {
+      type: String,
+    },
+    eventId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "events",
+      required: false,
+    },
   },
   {
     timestamps: true,
