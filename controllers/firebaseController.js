@@ -12,10 +12,10 @@ exports.sendNotification = async (req, res) => {
     },
     topic,
     data: {
-      // Add the data payload
-      eventId: eventId.toString(),
-      click_action: "FLUTTER_NOTIFICATION_CLICK",
-      targetScreen: screen || null, // Include the screen or null if not provided
+      title: title,
+      body: body,
+      eventId: eventId || null,
+      targetScreen: screen || null,
     },
   };
 
@@ -26,12 +26,12 @@ exports.sendNotification = async (req, res) => {
       title,
       body,
       screen,
-      eventId,
+      eventId: eventId && eventId !== "null" ? eventId : null,
     });
     await newNotification.save();
-    res.status(200).json({ success: true, messageId: response }); // Send only the message ID
+    res.status(200).json({ success: true, messageId: response });
   } catch (error) {
-    console.error("Error sending notification:", error); // Log the full error for debugging
+    console.error("Error sending notification:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
