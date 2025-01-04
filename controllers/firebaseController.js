@@ -12,15 +12,16 @@ exports.sendNotification = async (req, res) => {
     },
     topic,
     data: {
-      title: title,
-      body: body,
-      eventId: eventId || null,
-      targetScreen: screen || null,
+      targetScreen: screen || "",
+      eventId: eventId || "",
     },
   };
 
   try {
     const response = await admin.messaging().send(message);
+    console.log("Notification sent:", response);
+
+    // Save notification to database
     const newNotification = new Notification({
       topic,
       title,
@@ -29,6 +30,7 @@ exports.sendNotification = async (req, res) => {
       eventId: eventId && eventId !== "null" ? eventId : null,
     });
     await newNotification.save();
+
     res.status(200).json({ success: true, messageId: response });
   } catch (error) {
     console.error("Error sending notification:", error);
