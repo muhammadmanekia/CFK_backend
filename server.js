@@ -14,6 +14,7 @@ const rsvpRoutes = require("./routes/rsvps");
 const dateAdjustRoutes = require("./controllers/dateAdjustment");
 const notificationRoutes = require("./routes/notifications");
 const messagesRoutes = require("./routes/messages");
+const membershipsRoutes = require("./routes/memberships");
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
@@ -38,6 +39,7 @@ app.use("/api/donations", donationRoutes);
 app.use("/api/pledges", pledgeRoutes);
 app.use("/api/rsvps", rsvpRoutes);
 app.use("/api/date-adjust", dateAdjustRoutes);
+app.use("/api/membership", membershipsRoutes);
 
 // Database connection
 mongoose
