@@ -3,9 +3,13 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const admin = require("firebase-admin");
+const { initializeFirebase } = require("./config/firebase");
 require("dotenv").config();
 
+// Initialize Firebase first
+initializeFirebase();
+
+// Import routes
 const eventRoutes = require("./routes/events");
 const donationRoutes = require("./routes/donations");
 const pledgeRoutes = require("./routes/pledges");
@@ -15,12 +19,8 @@ const dateAdjustRoutes = require("./controllers/dateAdjustment");
 const notificationRoutes = require("./routes/notifications");
 const messagesRoutes = require("./routes/messages");
 const membershipsRoutes = require("./routes/memberships");
-
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+const googleEventRoutes = require("./routes/googleEvents");
+const uploadRoutes = require("./routes/upload");
 
 const app = express();
 
@@ -40,6 +40,8 @@ app.use("/api/pledges", pledgeRoutes);
 app.use("/api/rsvps", rsvpRoutes);
 app.use("/api/date-adjust", dateAdjustRoutes);
 app.use("/api/membership", membershipsRoutes);
+app.use("/api/google", googleEventRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Database connection
 mongoose

@@ -8,7 +8,8 @@ const eventSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: true,
+      required: false,
+      default: "",
     },
     date: {
       type: Date,
@@ -45,6 +46,9 @@ const eventSchema = new mongoose.Schema(
       default: false,
     },
     audience: {
+      type: String,
+    },
+    googleId: {
       type: String,
     },
   },

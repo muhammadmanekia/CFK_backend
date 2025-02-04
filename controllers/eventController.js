@@ -1,5 +1,8 @@
+const { google } = require("googleapis");
 const Event = require("../models/Event");
 const IslamicDates = require("../models/IslamicDate");
+require("dotenv").config();
+const fs = require("fs");
 
 // Get all events
 exports.getAllEvents = async (req, res) => {
@@ -111,4 +114,21 @@ exports.getEventById = async (req, res) => {
   }
 };
 
-// ... existing code ...
+// Set up Google Calendar API
+const oAuth2Client = new google.auth.OAuth2(
+  process.env.CLIENT_ID,
+  process.env.CLIENT_SECRET,
+  process.env.REDIRECT_URI
+);
+const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
+
+// Function to get and store the token
+function getAccessToken(oAuth2Client, callback) {
+  const authUrl = oAuth2Client.generateAuthUrl({
+    access_type: "offline",
+    scope: ["https://www.googleapis.com/auth/calendar.readonly"],
+  });
+  console.log("Authorize this app by visiting this url:", authUrl);
+  // Implement logic to get the code from the user
+  // Then call oAuth2Client.getToken(code, callback);
+}
