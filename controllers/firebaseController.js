@@ -50,3 +50,19 @@ exports.getNotification = async (req, res) => {
     res.status(500).json({ error: "Internal server error." });
   }
 };
+
+exports.deleteNotification = async (req, res) => {
+  const { id } = req.params;
+  console.log(id);
+
+  try {
+    const deletedNotification = await Notification.findByIdAndDelete(id);
+    if (!deletedNotification) {
+      return res.status(404).json({ error: "Notification not found." });
+    }
+    res.status(200).json({ success: true, message: "Notification deleted." });
+  } catch (error) {
+    console.error("Error deleting notification:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
