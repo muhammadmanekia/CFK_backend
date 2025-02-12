@@ -5,10 +5,17 @@ const jwt = require("jsonwebtoken");
 
 // Register a new user
 router.post("/register", async (req, res) => {
-  const { email, password } = req.body;
+  const { name, email, password } = req.body;
+  console.log(req.body);
 
   try {
-    const newUser = new User({ email, password });
+    // Check if the user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
+    const newUser = new User({ name, email, password });
     await newUser.save();
     const token = jwt.sign(
       { id: newUser._id, name: newUser.name, email: newUser.email },
