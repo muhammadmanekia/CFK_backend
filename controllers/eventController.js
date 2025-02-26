@@ -1,13 +1,12 @@
-const { google } = require("googleapis");
 const Event = require("../models/Event");
 const IslamicDates = require("../models/IslamicDate");
 require("dotenv").config();
-const fs = require("fs");
+const ScheduledNotification = require("../models/ScheduledNotification");
 
 // Get all events
 exports.getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().sort({ date: 1 });
+    const events = await Event.find().sort({ startDateTime: 1 });
     res.json(events);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -17,21 +16,36 @@ exports.getAllEvents = async (req, res) => {
 // Get events from today onwards
 exports.getUpcomingEvents = async (req, res) => {
   try {
-    const datetoday = new Date(); // Get the current date and time
-    const today = new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/Chicago", // Central Time Zone
-    }).format(datetoday);
-    console.log(today);
+    const now = new Date(); // Get the current date and time
+    now.setHours(now.getHours() - 6); // Adjust to CST timezone
+    console.log(now);
 
-    // Query MongoDB for events where the date is greater than or equal to today
+    // Get pagination parameters from the request query
+    const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
+    const skip = (page - 1) * limit; // Calculate the number of items to skip
+
+    // Query MongoDB for events where the date is greater than or equal to now in CST
     const events = await Event.find({
-      date: { $gte: today },
-    }).sort({
-      date: 1,
-    });
+      startDateTime: { $gte: now }, // Find events starting from now onward in CST
+    })
+      .sort({ startDateTime: 1 })
+      .skip(skip) // Skip the number of items based on the page
+      .limit(limit); // Limit the number of items returned
+
+    const totalEvents = await Event.countDocuments({
+      startDateTime: { $gte: now },
+    }); // Get the total count of upcoming events
+
+    const totalPages = Math.ceil(totalEvents / limit); // Calculate total pages
 
     console.log(events);
-    res.json(events); // Send the events as the response
+    res.json({
+      events,
+      totalPages,
+      currentPage: page,
+      totalEvents,
+    }); // Send the events and pagination info as the response
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
@@ -45,6 +59,7 @@ exports.createEvent = async (req, res) => {
     const newEvent = await event.save();
     res.status(201).json(newEvent);
   } catch (error) {
+    console.log(error.message);
     res.status(400).json({ message: error.message });
   }
 };
@@ -88,6 +103,8 @@ exports.deleteEvent = async (req, res) => {
 
   try {
     const deletedEvent = await Event.findByIdAndDelete(id);
+    await ScheduledNotification.findOneAndDelete({ eventId: id });
+
     if (!deletedEvent) {
       return res.status(404).json({ message: "Event not found" });
     }
@@ -113,22 +130,3 @@ exports.getEventById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// Set up Google Calendar API
-const oAuth2Client = new google.auth.OAuth2(
-  process.env.CLIENT_ID,
-  process.env.CLIENT_SECRET,
-  process.env.REDIRECT_URI
-);
-const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
-
-// Function to get and store the token
-function getAccessToken(oAuth2Client, callback) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: ["https://www.googleapis.com/auth/calendar.readonly"],
-  });
-  console.log("Authorize this app by visiting this url:", authUrl);
-  // Implement logic to get the code from the user
-  // Then call oAuth2Client.getToken(code, callback);
-}

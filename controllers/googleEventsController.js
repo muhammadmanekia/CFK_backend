@@ -82,6 +82,8 @@ exports.fetchAndSaveEvents = async (req, res) => {
             requireRSVP: false,
             audience: "",
             googleId: event.id,
+            startDateTime: event.start.dateTime,
+            endDateTime: event.end.dateTime,
           });
 
           await newEvent.save();

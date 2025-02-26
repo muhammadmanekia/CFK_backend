@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 
 // Register a new user
 router.post("/register", async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phoneNumber } = req.body;
   console.log(req.body);
 
   try {
@@ -15,10 +15,15 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Email already in use" });
     }
 
-    const newUser = new User({ name, email, password });
+    const newUser = new User({ name, email, password, phoneNumber });
     await newUser.save();
     const token = jwt.sign(
-      { id: newUser._id, name: newUser.name, email: newUser.email },
+      {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        phoneNumber: newUser.phoneNumber,
+      },
       process.env.JWT_SECRET
     );
     res.json({ token, message: "User registered successfully" });
@@ -38,7 +43,12 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, name: user.name, email: user.email },
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+      },
       process.env.JWT_SECRET
     );
     res.json({ token });
@@ -49,7 +59,7 @@ router.post("/login", async (req, res) => {
 
 // Update user information
 router.put("/update", async (req, res) => {
-  const { id, name, email, password } = req.body;
+  const { id, name, email, password, phoneNumber } = req.body;
 
   try {
     const user = await User.findById(id); // Get the authenticated user
@@ -61,10 +71,16 @@ router.put("/update", async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (password) user.password = password; // Password will be hashed in the User model
+    if (phoneNumber) user.phoneNumber = phoneNumber;
 
     await user.save();
     const token = jwt.sign(
-      { id: user._id, name: user.name, email: user.email },
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+      },
       process.env.JWT_SECRET
     );
     res.json({ token, message: "User information updated successfully" });

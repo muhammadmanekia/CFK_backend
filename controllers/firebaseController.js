@@ -1,68 +1,140 @@
 const admin = require("firebase-admin");
 const mongoose = require("mongoose");
 const Notification = require("../models/Notifications");
+const cron = require("node-cron");
+const ScheduledNotification = require("../models/ScheduledNotification");
 
 exports.sendNotification = async (req, res) => {
-  const { topic, title, body, screen, eventId } = req.body;
-
-  const message = {
-    notification: {
-      title,
-      body,
-    },
-    topic,
-    data: {
-      targetScreen: screen || "",
-      eventId: eventId || "",
-    },
-  };
+  const { topic, title, body, screen, eventId, sendAt } = req.body;
 
   try {
-    const response = await admin.messaging().send(message);
-    console.log("Notification sent:", response);
-
-    // Save notification to database
-    const newNotification = new Notification({
-      topic,
-      title,
-      body,
-      screen,
-      eventId: eventId && eventId !== "null" ? eventId : null,
+    // Check if a notification for this event id already exists
+    const existingNotification = await Notification.findOne({
+      eventId: eventId,
     });
-    await newNotification.save();
+    if (existingNotification) {
+      // Update existing notification with new sendAt and status to pending
+      existingNotification.sendAt = sendAt ? sendAt : new Date();
+      existingNotification.status = "pending";
+      await existingNotification.save();
+    } else {
+      // Save notification to database if it doesn't exist
+      const newNotification = new Notification({
+        topic,
+        title,
+        body,
+        screen,
+        eventId: eventId && eventId !== "null" ? eventId : null,
+        sendAt: sendAt ? sendAt : new Date(),
+        createdAt: new Date(),
+        status: "pending", // Add a status field to track notification state
+      });
+      await newNotification.save();
+    }
 
-    res.status(200).json({ success: true, messageId: response });
+    res.status(200).json({ success: true });
   } catch (error) {
-    console.error("Error sending notification:", error);
+    console.error("Error saving notification:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
 
-exports.getNotification = async (req, res) => {
+exports.getNotifications = async (req, res) => {
   try {
-    const notification = await Notification.find();
-    if (!notification) {
-      return res.status(404).json({ error: "No messages found." });
+    const notifications = await Notification.find().sort({ sendAt: -1 });
+
+    if (!notifications.length) {
+      return res.status(404).json({ error: "No notifications found." });
     }
-    res.status(200).json(notification);
+
+    res.status(200).json(notifications);
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching notifications:", error);
     res.status(500).json({ error: "Internal server error." });
   }
 };
 
 exports.deleteNotification = async (req, res) => {
   const { id } = req.params;
-  console.log(id);
 
   try {
     const deletedNotification = await Notification.findByIdAndDelete(id);
+
     if (!deletedNotification) {
       return res.status(404).json({ error: "Notification not found." });
     }
+
     res.status(200).json({ success: true, message: "Notification deleted." });
   } catch (error) {
     console.error("Error deleting notification:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+cron.schedule("* * * * *", async () => {
+  console.log("Checking for scheduled notifications...");
+
+  const now = new Date();
+
+  try {
+    // Find scheduled notifications that are due for sending
+    const notificationsToSend = await ScheduledNotification.find({
+      sendAt: { $lte: now }, // Notifications scheduled before or at the current time
+      status: "pending",
+    });
+
+    if (!notificationsToSend.length) {
+      console.log("No pending notifications to send.");
+      return;
+    }
+
+    console.log(`Sending ${notificationsToSend.length} notifications...`);
+
+    for (const notification of notificationsToSend) {
+      try {
+        // Create FCM message
+        const message = {
+          notification: {
+            title: notification.title,
+            body: notification.body,
+          },
+          topic: notification.topic,
+          data: {
+            targetScreen: notification.screen || "",
+            eventId: notification.eventId
+              ? notification.eventId.toString()
+              : "",
+          },
+        };
+
+        // Send notification via Firebase
+        await admin.messaging().send(message);
+        console.log(`Notification sent for event ${notification.eventId}`);
+
+        // Move the notification to the Notifications collection
+        await Notification.create({
+          topic: notification.topic,
+          title: notification.title,
+          body: notification.body,
+          screen: notification.screen,
+          eventId: notification.eventId,
+          sendAt: notification.sendAt,
+          createdAt: new Date(),
+          status: "sent",
+        });
+
+        // Remove from scheduled notifications after sending
+        await ScheduledNotification.findByIdAndDelete(notification._id);
+      } catch (error) {
+        console.error(`Error sending notification ${notification._id}:`, error);
+        await ScheduledNotification.findByIdAndUpdate(notification._id, {
+          status: "failed",
+        });
+      }
+    }
+
+    console.log("Finished processing scheduled notifications.");
+  } catch (error) {
+    console.error("Error in notification cron job:", error);
+  }
+});

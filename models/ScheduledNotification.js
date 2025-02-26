@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const notificationSchema = new mongoose.Schema(
+const scheduledNotificationSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -29,7 +29,7 @@ const notificationSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model(
-  "Notification",
-  notificationSchema,
-  "notifications"
+  "ScheduledNotification",
+  scheduledNotificationSchema,
+  "Scheduled_Notification"
 );

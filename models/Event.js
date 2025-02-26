@@ -4,27 +4,22 @@ const eventSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: true,
     },
     description: {
       type: String,
-      required: false,
       default: "",
     },
     date: {
       type: Date,
-      required: true,
     },
     startTime: {
       type: String,
-      required: true,
     },
     endTime: {
       type: String,
     },
     location: {
       type: String,
-      required: true,
     },
     imageUrl: {
       type: String,
@@ -50,6 +45,12 @@ const eventSchema = new mongoose.Schema(
     },
     googleId: {
       type: String,
+    },
+    startDateTime: {
+      type: Date,
+    },
+    endDateTime: {
+      type: Date,
     },
   },
   {
