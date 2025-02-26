@@ -40,12 +40,12 @@ exports.getUpcomingEvents = async (req, res) => {
     const totalPages = Math.ceil(totalEvents / limit); // Calculate total pages
 
     console.log(events);
-    res.json({
-      events,
-      totalPages,
-      currentPage: page,
-      totalEvents,
-    }); // Send the events and pagination info as the response
+    res.json(
+      events
+      // totalPages,
+      // currentPage: page,
+      // totalEvents,
+    ); // Send the events and pagination info as the response
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
