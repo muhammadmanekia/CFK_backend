@@ -8,6 +8,7 @@ router.get("/islamic-dates", eventController.getIslamicDates);
 router.get("/", eventController.getAllEvents);
 
 router.get("/upcoming", eventController.getUpcomingEvents);
+router.get("/upcoming/new", eventController.getUpcomingEventsNew);
 
 // Create new event
 router.post("/", eventController.createEvent);

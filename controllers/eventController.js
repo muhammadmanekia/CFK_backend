@@ -52,6 +52,45 @@ exports.getUpcomingEvents = async (req, res) => {
   }
 };
 
+// Get events from today onwards
+exports.getUpcomingEventsNew = async (req, res) => {
+  try {
+    const now = new Date(); // Get the current date and time
+    now.setHours(now.getHours() - 6); // Adjust to CST timezone
+    console.log(now);
+
+    // Get pagination parameters from the request query
+    const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
+    const skip = (page - 1) * limit; // Calculate the number of items to skip
+
+    // Query MongoDB for events where the date is greater than or equal to now in CST
+    const events = await Event.find({
+      startDateTime: { $gte: now }, // Find events starting from now onward in CST
+    })
+      .sort({ startDateTime: 1 })
+      .skip(skip) // Skip the number of items based on the page
+      .limit(limit); // Limit the number of items returned
+
+    const totalEvents = await Event.countDocuments({
+      startDateTime: { $gte: now },
+    }); // Get the total count of upcoming events
+
+    const totalPages = Math.ceil(totalEvents / limit); // Calculate total pages
+
+    console.log(events);
+    res.json({
+      events,
+      totalPages,
+      currentPage: page,
+      totalEvents,
+    }); // Send the events and pagination info as the response
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Create new event
 exports.createEvent = async (req, res) => {
   const event = new Event(req.body);
