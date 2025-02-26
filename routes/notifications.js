@@ -10,4 +10,6 @@ router.delete(
   firebaseController.deleteNotification
 );
 
+router.delete("/delete-schedule/:id", ScheduleController.deleteNotification);
+
 module.exports = router;

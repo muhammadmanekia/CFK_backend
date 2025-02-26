@@ -52,6 +52,10 @@ const eventSchema = new mongoose.Schema(
     endDateTime: {
       type: Date,
     },
+    cancelled: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
