@@ -77,9 +77,8 @@ cron.schedule("* * * * *", async () => {
   const now = new Date();
 
   try {
-    // Find scheduled notifications that are due for sending
     const notificationsToSend = await ScheduledNotification.find({
-      sendAt: { $lte: now }, // Notifications scheduled before or at the current time
+      sendAt: { $lte: now },
       status: "pending",
     });
 
@@ -92,6 +91,9 @@ cron.schedule("* * * * *", async () => {
 
     for (const notification of notificationsToSend) {
       try {
+        // Delete the notification BEFORE sending
+        await ScheduledNotification.findByIdAndDelete(notification._id);
+
         // Create FCM message
         const message = {
           notification: {
@@ -122,9 +124,6 @@ cron.schedule("* * * * *", async () => {
           createdAt: new Date(),
           status: "sent",
         });
-
-        // Remove from scheduled notifications after sending
-        await ScheduledNotification.findByIdAndDelete(notification._id);
       } catch (error) {
         console.error(`Error sending notification ${notification._id}:`, error);
         await ScheduledNotification.findByIdAndUpdate(notification._id, {

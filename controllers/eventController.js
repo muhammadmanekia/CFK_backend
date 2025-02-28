@@ -121,10 +121,7 @@ exports.updateEvent = async (req, res) => {
   const updates = req.body; // Get the updated data from the request body
 
   try {
-    const updatedEvent = await Event.findByIdAndUpdate(id, updates, {
-      new: true,
-      runValidators: true,
-    });
+    const updatedEvent = await Event.findByIdAndUpdate(id, updates);
     if (!updatedEvent) {
       return res.status(404).json({ message: "Event not found" });
     }

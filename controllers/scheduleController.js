@@ -6,9 +6,12 @@ exports.scheduleNotification = async (req, res) => {
 
   try {
     // Check if a scheduled notification for this event ID already exists
-    const existingNotification = await ScheduledNotification.findOne({
-      eventId,
-    });
+    let existingNotification;
+    if (eventId != "null") {
+      existingNotification = await ScheduledNotification.findOne({
+        eventId,
+      });
+    }
 
     if (existingNotification) {
       // Update existing notification with new sendAt time and reset status
@@ -17,6 +20,7 @@ exports.scheduleNotification = async (req, res) => {
       existingNotification.title = title;
       existingNotification.body = body;
       existingNotification.screen = screen;
+      existingNotification.topic = topic;
       await existingNotification.save();
     } else {
       // Create a new scheduled notification
