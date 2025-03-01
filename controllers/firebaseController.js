@@ -41,7 +41,7 @@ exports.sendNotification = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find().sort({ sendAt: -1 });
+    const notifications = await Notification.find().sort({ sendAt: 1 });
 
     if (!notifications.length) {
       return res.status(404).json({ error: "No notifications found." });
