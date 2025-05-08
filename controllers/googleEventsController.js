@@ -1,46 +1,39 @@
-const Event = require("../models/Event");
+const MockEvents = require("../models/Mock_Event");
 const googleOAuthManager = require("../controllers/googleOAuthManager");
 const { google } = require("googleapis");
 
-// Function to get image URL based on event summary
-function getImageUrlByEventName(summary) {
-  if (summary.includes("Duʿā Kumayl")) {
-    return "https://mcusercontent.com/185fa65767eb01e2186a1ff88/images/2fff4a16-6cd5-19f3-ee8f-c5d111c3ecb8.jpeg";
-  }
-  if (summary.includes("Salāt-e-Jumuʿāh")) {
-    return "https://mcusercontent.com/185fa65767eb01e2186a1ff88/images/786b2746-6408-1be9-0ef6-43c6ae3cce62.jpeg";
-  }
-  // Add more conditions for other names and their corresponding image URLs if needed
-  return ""; // Return an empty string if no match is found
-}
-
 function cleanEventDescription(description) {
-  // Remove HTML tags
-  let cleanDesc = description.replace(/<[^>]*>/g, "");
+  if (!description) return "";
 
-  // Split and take first part if it includes a series of dashes
-  const parts = cleanDesc.split(/-{5,}/); // Split on five or more dashes
-
-  // Return first part, trimmed
-  return parts[0].trim();
+  // Convert <li> to bullets with newlines, remove other tags
+  return description
+    .replace(/<\/li>/gi, "\n")
+    .replace(/<li>/gi, "• ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/?ul>/gi, "")
+    .replace(/<\/?[^>]+(>|$)/g, "")
+    .split(/-{5,}/)[0] // Take first part if there are "-----"
+    .trim();
 }
 
-function formatTime(timeString) {
-  const date = new Date(timeString);
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+// --- Utility: Extract plain text after a label like "Price:" ---
+function extractAfterLabel(text, label) {
+  const regex = new RegExp(`${label}\\s*([^<]*)<br>?`, "i");
+  const match = text.match(regex);
+  return match ? match[1].trim() : null;
+}
+
+// --- Utility: Extract a URL after a label with <a href="..." ---
+function extractURLAfterLabel(text, label) {
+  const regex = new RegExp(`${label}\\s*<a[^>]+href="([^"]+)"`, "i");
+  const match = text.match(regex);
+  return match ? match[1].trim() : null;
 }
 
 exports.fetchAndSaveEvents = async (req, res) => {
   try {
-    // Initialize OAuth client
     await googleOAuthManager.initializeAuth();
     const oauth2Client = googleOAuthManager.getClient();
-
-    // Create Google Calendar API client
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
     const tokens = googleOAuthManager.loadTokens();
@@ -51,83 +44,60 @@ exports.fetchAndSaveEvents = async (req, res) => {
       });
     }
 
-    // Fetch events from primary calendar
     const response = await calendar.events.list({
       calendarId: "c_6sj7il06t2m6k7q5fde358funk@group.calendar.google.com",
       timeMin: new Date().toISOString(),
       maxResults: 50,
       singleEvents: true,
       orderBy: "startTime",
+      timeMax: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
     const events = response.data.items;
-    const savedEvents = await Promise.all(
-      events.map(async (event) => {
-        const existingEvent = await Event.findOne({ googleId: event.id });
-        if (!existingEvent) {
-          const newEvent = new Event({
-            title: event.summary,
-            description: cleanEventDescription(event.description || "") || "",
-            date: new Date(event.start.dateTime || event.start.date),
-            startTime:
-              formatTime(event.start.dateTime) || formatTime(event.start.date),
-            endTime:
-              formatTime(event.end.dateTime) || formatTime(event.end.date),
-            location: event.location || "",
-            imageUrl: getImageUrlByEventName(event.summary),
-            price: "",
-            organizers: "City of Knowledge",
-            registrationLink: "",
-            contact: "",
-            requireRSVP: false,
-            audience: "",
-            googleId: event.id,
-            startDateTime: event.start.dateTime,
-            endDateTime: event.end.dateTime,
-          });
+    const savedEvents = [];
 
-          await newEvent.save();
+    for (const event of events) {
+      if (!event.summary) continue;
 
-          return newEvent;
-        }
-      })
-    );
+      const desc = event.description || "";
+      const eventData = {
+        title: event.summary,
+        description: cleanEventDescription(desc),
+        location: event.location || "",
+        imageUrl: extractURLAfterLabel(desc, "Image:") || "",
+        price: extractAfterLabel(desc, "Price:") || "",
+        organizers:
+          extractAfterLabel(desc, "Organizers:") || "City of Knowledge",
+        registrationLink: extractURLAfterLabel(desc, "Register:") || "",
+        contact: extractAfterLabel(desc, "Contact:") || "",
+        requireRSVP: desc.toLowerCase().includes("please rsvp on the app"),
+        audience: extractAfterLabel(desc, "Audience:") || "",
+        googleId: event.id,
+        startDateTime: event.start.dateTime,
+        endDateTime: event.end.dateTime,
+        cancelled: event.summary.toLowerCase().includes("cancelled"),
+      };
 
-    // Save events to MongoDB
-    // const savedEvents = await Promise.all(
-    //   events.map(async (event) => {
-    //     // Check if event already exists to avoid duplicates
-    //     const existingEvent = await Event.findOne({ googleId: event.id });
+      // Check if an event with same title and startDateTime exists
+      const existingEvent = await MockEvents.findOne({
+        title: eventData.title,
+        startDateTime: eventData.startDateTime,
+      });
 
-    //     if (existingEvent) {
-    //       // Update existing event
-    //       return await Event.findOneAndUpdate(
-    //         { googleId: event.id },
-    //         {
-    //           summary: event.summary,
-    //           description: event.description,
-    //           start: event.start.dateTime || event.start.date,
-    //           end: event.end.dateTime || event.end.date,
-    //           location: event.location,
-    //           status: event.status,
-    //         },
-    //         { new: true }
-    //       );
-    //     } else {
-    //       // Create new event
-    //       return await Event.create({
-    //         googleId: event.id,
-    //         summary: event.summary,
-    //         description: event.description,
-    //         start: event.start.dateTime || event.start.date,
-    //         end: event.end.dateTime || event.end.date,
-    //         location: event.location,
-    //         status: event.status,
-    //       });
-    //     }
-    //   })
-    // );
-    console.log(savedEvents);
+      if (existingEvent) {
+        // Update existing event
+        const updated = await MockEvents.findByIdAndUpdate(
+          existingEvent._id,
+          eventData,
+          { new: true }
+        );
+        savedEvents.push(updated);
+      } else {
+        // Create new event
+        const created = await new MockEvents(eventData).save();
+        savedEvents.push(created);
+      }
+    }
 
     res.status(200).json({
       message: "Events fetched and saved successfully",
@@ -145,7 +115,7 @@ exports.fetchAndSaveEvents = async (req, res) => {
 
 exports.getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().sort({ start: 1 });
+    const events = await MockEvents.find().sort({ start: 1 });
     res.status(200).json(events);
   } catch (error) {
     res.status(500).json({
@@ -157,7 +127,7 @@ exports.getAllEvents = async (req, res) => {
 
 exports.getEventById = async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const event = await MockEvents.findById(req.params.id);
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
