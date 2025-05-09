@@ -32,6 +32,7 @@ function extractURLAfterLabel(text, label) {
 
 exports.fetchAndSaveEvents = async (req, res) => {
   try {
+    const days = parseInt(req.query.days) || 8;
     await googleOAuthManager.initializeAuth();
     const oauth2Client = googleOAuthManager.getClient();
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
@@ -50,7 +51,7 @@ exports.fetchAndSaveEvents = async (req, res) => {
       maxResults: 50,
       singleEvents: true,
       orderBy: "startTime",
-      timeMax: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
+      timeMax: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
     });
 
     const events = response.data.items;
